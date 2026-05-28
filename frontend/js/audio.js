@@ -49,12 +49,23 @@ let synths = new Map();
 let reverb;
 let volume;
 let initialized = false;
+let initPromise = null;
 
 export async function initAudio() {
   await Tone.start();
-  reverb = new Tone.Reverb({ decay: 3, wet: 0.35 }).toDestination();
-  volume = new Tone.Volume(-8).connect(reverb);
-  initialized = true;
+  if (initialized) return;
+  if (!initPromise) {
+    initPromise = (async () => {
+      reverb = new Tone.Reverb({ decay: 3, wet: 0.35 }).toDestination();
+      volume = new Tone.Volume(-8).connect(reverb);
+      initialized = true;
+    })();
+  }
+  try {
+    await initPromise;
+  } finally {
+    initPromise = null;
+  }
 }
 
 export function setVolume(db) {

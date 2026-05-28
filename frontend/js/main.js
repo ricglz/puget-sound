@@ -17,35 +17,22 @@ let customRouteIds = new Set();
 let prevStops = new Map();
 let noteTimestamps = [];
 let audioReady = false;
+let muteHandlerAttached = false;
 let presetGeneration = 0;
 
 const $ = (id) => document.getElementById(id);
 
 loadSettings();
+initMuteButton();
 
 if (hasVisited()) {
   $("splash").classList.add("hidden");
   $("app").classList.remove("hidden");
-  $("mute-btn").textContent = "♪";
-  $("mute-btn").classList.add("muted");
-  $("mute-btn").disabled = true;
-  $("mute-btn").title = "Click anywhere to start audio";
-  document.addEventListener("click", async () => {
-    if (audioReady) return;
-    await initAudio();
-    applyAudioSettings();
-    audioReady = true;
-    $("mute-btn").textContent = "♫";
-    $("mute-btn").classList.remove("muted");
-    $("mute-btn").disabled = false;
-    $("mute-btn").title = "Mute/Unmute";
-  }, { once: true });
+  syncMuteButton();
   start();
 } else {
   $("enter-btn").addEventListener("click", async () => {
-    await initAudio();
-    applyAudioSettings();
-    audioReady = true;
+    await ensureAudioStarted();
     markVisited();
     $("splash").classList.add("hidden");
     $("app").classList.remove("hidden");
@@ -57,6 +44,15 @@ function applyAudioSettings() {
   const s = getSettings();
   setVolume(s.volume);
   setReverbWet(s.reverbWet);
+}
+
+async function ensureAudioStarted() {
+  if (audioReady) return;
+  await initAudio();
+  applyAudioSettings();
+  setMuted(false);
+  audioReady = true;
+  syncMuteButton();
 }
 
 onSettingsChange((key) => {
@@ -253,14 +249,37 @@ function updateNPM() {
 
 // ── Mute ──
 
-function toggleMute() {
+function syncMuteButton(muted = audioReady ? isMuted() : true) {
+  const btn = $("mute-btn");
+  btn.textContent = muted ? "♪" : "♫";
+  btn.classList.toggle("muted", muted);
+  btn.disabled = false;
+  btn.title = audioReady ? "Mute/Unmute" : "Start audio";
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.playbackState = audioReady && !muted ? "playing" : "paused";
+  }
+}
+
+async function toggleMute() {
+  if (!audioReady) {
+    try {
+      await ensureAudioStarted();
+    } catch (e) {
+      console.error("audio start:", e);
+      syncMuteButton(true);
+    }
+    return;
+  }
+
   const muted = !isMuted();
   setMuted(muted);
-  $("mute-btn").textContent = muted ? "♪" : "♫";
-  $("mute-btn").classList.toggle("muted", muted);
-  if ("mediaSession" in navigator) {
-    navigator.mediaSession.playbackState = muted ? "paused" : "playing";
-  }
+  syncMuteButton(muted);
+}
+
+function initMuteButton() {
+  if (muteHandlerAttached) return;
+  $("mute-btn").addEventListener("click", toggleMute);
+  muteHandlerAttached = true;
 }
 
 function initMediaSession() {
@@ -269,9 +288,16 @@ function initMediaSession() {
     title: "Puget Sound",
     artist: "Seattle Transit",
   });
-  navigator.mediaSession.setActionHandler("play", () => { setMuted(false); $("mute-btn").textContent = "♫"; $("mute-btn").classList.remove("muted"); navigator.mediaSession.playbackState = "playing"; });
-  navigator.mediaSession.setActionHandler("pause", () => { setMuted(true); $("mute-btn").textContent = "♪"; $("mute-btn").classList.add("muted"); navigator.mediaSession.playbackState = "paused"; });
-  navigator.mediaSession.playbackState = "playing";
+  navigator.mediaSession.setActionHandler("play", async () => {
+    await ensureAudioStarted();
+    setMuted(false);
+    syncMuteButton(false);
+  });
+  navigator.mediaSession.setActionHandler("pause", () => {
+    setMuted(true);
+    syncMuteButton(true);
+  });
+  syncMuteButton();
 }
 
 // ── Modals ──
@@ -279,7 +305,7 @@ function initMediaSession() {
 function initModals() {
   $("info-btn").addEventListener("click", () => $("info-modal").classList.remove("hidden"));
   $("settings-btn").addEventListener("click", () => openSettingsModal());
-  $("mute-btn").addEventListener("click", toggleMute);
+  initMuteButton();
   initMediaSession();
 
   document.querySelectorAll(".modal-overlay").forEach((modal) => {
