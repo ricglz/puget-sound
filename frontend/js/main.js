@@ -250,6 +250,7 @@ function updateNPM() {
 // ── Mute ──
 
 function toggleMute() {
+  if (!audioReady) return;
   const muted = !isMuted();
   setMuted(muted);
   $("mute-btn").textContent = muted ? "♪" : "♫";
