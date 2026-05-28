@@ -126,7 +126,7 @@ class TransitDataStore:
 
     def _fetch_oba(self) -> list[dict]:
         now = time.time()
-        if now - self._cache_time < 10:
+        if now - self._cache_time < 30:
             return self._cached_vehicles
 
         try:
