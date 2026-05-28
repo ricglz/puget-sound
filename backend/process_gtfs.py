@@ -26,8 +26,10 @@ FEEDS = [
 
 
 DISTINCT_COLORS = [
-    "4CAF50", "FF5722", "9C27B0", "00BCD4", "795548", "607D8B",
-    "E91E63", "3F51B5", "009688", "FF9800", "8BC34A", "673AB7",
+    "E53935", "F4511E", "FB8C00", "FDD835",
+    "43A047", "00897B", "00ACC1", "039BE5",
+    "3949AB", "8E24AA", "D81B60", "6D4C41",
+    "546E7A", "C0CA33", "FF7043", "26A69A",
 ]
 _color_idx = 0
 
@@ -111,7 +113,7 @@ def process_feed(z: zipfile.ZipFile, targets: set[str]) -> dict:
         long_name = rdata.get("route_long_name", "")
 
         global _color_idx
-        default_colors = {"FDB71A", ""}
+        default_colors = {"FDB71A", "9C182F", ""}
         if color in default_colors and stops_out:
             color = DISTINCT_COLORS[_color_idx % len(DISTINCT_COLORS)]
             _color_idx += 1

@@ -45,11 +45,17 @@ export function renderRoutes(routes, activeRouteIds) {
 
     if (route.stops.length > 1) {
       const latlngs = route.stops.map((s) => [s.lat, s.lon]);
+      const label = route.long_name
+        ? `${route.short_name} — ${route.long_name}`
+        : route.short_name;
       L.polyline(latlngs, {
         color,
         weight: 3,
         opacity: 0.45,
         smoothFactor: 1.5,
+      }).bindTooltip(label, {
+        className: "stop-tooltip",
+        sticky: true,
       }).addTo(routeGroup);
     }
 
