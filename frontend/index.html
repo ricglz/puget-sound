@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puget Sound</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <div id="splash">
+    <div class="splash-content">
+      <h1>Puget Sound</h1>
+      <p class="tagline">Seattle's transit, playing itself.</p>
+      <p class="description">
+        Each bus line is a voice. Each stop, a note.<br>
+        When a bus arrives, it plays.<br>
+        Nobody decides what plays or when &mdash; the score is written by drivers, traffic, rain.
+      </p>
+      <button id="enter-btn">Enter</button>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <div id="map-container"></div>
+
+    <div id="preset-panel">
+      <h3>Presets</h3>
+      <div id="preset-list"></div>
+      <h3>Routes</h3>
+      <div id="route-list"></div>
+    </div>
+
+    <div id="recent-panel">
+      <h4>recently played</h4>
+      <ul id="recent-list"></ul>
+    </div>
+
+    <div id="status-bar">
+      <span id="clock"></span>
+      <span id="bus-count">&mdash; buses</span>
+      <span id="notes-per-min">&#9833; 0/min</span>
+      <span id="current-preset">RapidRide</span>
+    </div>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>
