@@ -9,7 +9,7 @@ export const PRESETS = {
   top10: {
     name: "Top 10",
     description: "Metro's most productive routes by ridership",
-    routePatterns: ["A Line", "E Line", "D Line", "G Line", "H Line", "route_7", "route_8", "route_44", "route_45", "route_67", "route_2"],
+    routePatterns: ["A Line", "E Line", "D Line", "G Line", "H Line", "7", "8", "44", "45", "67", "2"],
     synth: "triangle",
     scale: "mixolydian",
   },
@@ -43,7 +43,7 @@ export function matchesPreset(route, presetName) {
   if (preset.routePatterns.length === 0) return false;
   const name = route.short_name || route.long_name || "";
   return preset.routePatterns.some(
-    (p) => name.includes(p) || route.route_id.includes(p),
+    (p) => name === p || route.route_id === p,
   );
 }
 
