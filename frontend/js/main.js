@@ -90,18 +90,50 @@ function refreshRoutes() {
   renderRoutes(transitData.routes, activeRouteIds);
 }
 
+let deferredArrivals = [];
+
+function scheduleArrivals(arrivals) {
+  for (const v of arrivals) {
+    const roll = Math.random();
+    if (roll < 0.55) {
+      // play this cycle, random spread within the poll window
+      const delay = Math.random() * (POLL_MS - 200);
+      setTimeout(() => onArrival(v), delay);
+    } else if (roll < 0.85) {
+      // defer 1-2 cycles
+      const delay = POLL_MS + Math.random() * POLL_MS * 2;
+      setTimeout(() => onArrival(v), delay);
+    } else {
+      // bank it — release later as a little cluster with others
+      deferredArrivals.push(v);
+    }
+  }
+
+  // occasionally flush the banked arrivals as a burst
+  if (deferredArrivals.length > 0 && Math.random() < 0.3) {
+    const batch = deferredArrivals.splice(0);
+    const baseDelay = Math.random() * POLL_MS;
+    batch.forEach((v, i) => {
+      setTimeout(() => onArrival(v), baseDelay + i * (150 + Math.random() * 400));
+    });
+  }
+}
+
 async function poll() {
   try {
     const vehicles = await fetch("/api/vehicles").then((r) => r.json());
 
+    const arrivals = [];
     for (const v of vehicles) {
       if (!activeRouteIds.includes(v.route_id)) continue;
       const prev = prevStops.get(v.vehicle_id);
       if (v.current_status === "STOPPED_AT" && v.stop_id && v.stop_id !== prev) {
-        onArrival(v);
+        arrivals.push(v);
       }
       prevStops.set(v.vehicle_id, v.current_status === "STOPPED_AT" ? v.stop_id : null);
     }
+
+    scheduleArrivals(arrivals);
 
     updateVehicles(vehicles, activeRouteIds);
     const count = vehicles.filter((v) => activeRouteIds.includes(v.route_id)).length;
