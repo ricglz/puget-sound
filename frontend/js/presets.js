@@ -1,10 +1,17 @@
 export const PRESETS = {
   rapidride: {
     name: "RapidRide",
-    description: "High-frequency bus network (C, D, E lines)",
-    routePatterns: ["C Line", "D Line", "E Line"],
+    description: "All RapidRide lines (A, C, D, E, G, H)",
+    routePatterns: ["A Line", "C Line", "D Line", "E Line", "G Line", "H Line"],
     synth: "am",
     scale: "pentatonic",
+  },
+  top10: {
+    name: "Top 10",
+    description: "Metro's most productive routes by ridership",
+    routePatterns: ["A Line", "E Line", "D Line", "G Line", "H Line", "route_7", "route_8", "route_44", "route_45", "route_67", "route_2"],
+    synth: "triangle",
+    scale: "mixolydian",
   },
   link: {
     name: "Link Light Rail",
