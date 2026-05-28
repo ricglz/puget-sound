@@ -12,7 +12,7 @@ const SYNTH_CONFIGS = {
     options: {
       harmonicity: 2,
       oscillator: { type: "sine" },
-      envelope: { attack: 0.01, decay: 0.5, sustain: 0.1, release: 1.5 },
+      envelope: { attack: 0.01, decay: 0.5, sustain: 0.25, release: 1.5 },
       modulation: { type: "sine" },
       modulationEnvelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 0.8 },
     },
@@ -23,26 +23,48 @@ const SYNTH_CONFIGS = {
       harmonicity: 3,
       modulationIndex: 10,
       oscillator: { type: "sine" },
-      envelope: { attack: 0.01, decay: 0.4, sustain: 0.1, release: 2 },
+      envelope: { attack: 0.01, decay: 0.4, sustain: 0.25, release: 2 },
       modulation: { type: "square" },
-      modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.5 },
+      modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.15, release: 0.5 },
     },
   },
   triangle: {
     voice: Tone.Synth,
     options: {
       oscillator: { type: "triangle" },
-      envelope: { attack: 0.01, decay: 0.4, sustain: 0.1, release: 1.2 },
+      envelope: { attack: 0.01, decay: 0.4, sustain: 0.25, release: 1.2 },
     },
   },
   sine: {
     voice: Tone.Synth,
     options: {
       oscillator: { type: "sine" },
-      envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 1 },
+      envelope: { attack: 0.01, decay: 0.3, sustain: 0.25, release: 1 },
     },
   },
 };
+
+// Weighted random duration: mostly short, occasionally held
+// [duration in seconds, weight]
+const DURATIONS = [
+  [0.15, 40], // staccato — most common
+  [0.3,  25], // short
+  [0.6,  15], // medium
+  [1.2,   10], // held
+  [2.5,   7], // long hold
+  [4.0,   3], // rare drone
+];
+
+const DURATION_TOTAL = DURATIONS.reduce((s, d) => s + d[1], 0);
+
+function pickDuration() {
+  let r = Math.random() * DURATION_TOTAL;
+  for (const [dur, weight] of DURATIONS) {
+    r -= weight;
+    if (r <= 0) return dur;
+  }
+  return DURATIONS[0][0];
+}
 
 let synths = new Map();
 let reverb;
@@ -60,7 +82,7 @@ function getOrCreateSynth(routeId, synthType) {
   if (!synths.has(routeId)) {
     const config = SYNTH_CONFIGS[synthType] || SYNTH_CONFIGS.sine;
     const synth = new Tone.PolySynth(config.voice, config.options);
-    synth.maxPolyphony = 6;
+    synth.maxPolyphony = 8;
     synth.connect(volume);
     synths.set(routeId, synth);
   }
@@ -76,15 +98,32 @@ export function playNote(routeId, stopSequence, synthType, scaleName) {
   const octaveOffset = Math.floor(stopSequence / scale.length) % 3;
   const note = `${scale[noteIndex]}${baseOctave + octaveOffset}`;
 
+  const duration = pickDuration();
+  const velocity = duration > 1 ? 0.25 + Math.random() * 0.1 : 0.3 + Math.random() * 0.15;
+
+  if (duration >= 1.2) {
+    console.log(`♬ HELD note: ${note} (${duration.toFixed(1)}s) on ${routeId}`);
+  }
+
   try {
     const synth = getOrCreateSynth(routeId, synthType);
-    synth.triggerAttackRelease(note, "8n", Tone.now(), 0.25 + Math.random() * 0.15);
+    synth.triggerAttackRelease(note, duration, Tone.now(), velocity);
   } catch {
-    // synth busy — skip
+    // synth disposed mid-transition — ignore
   }
 }
 
 export function disposeSynths() {
-  for (const s of synths.values()) s.dispose();
-  synths.clear();
+  const old = synths;
+  synths = new Map();
+  setTimeout(() => {
+    for (const s of old.values()) {
+      try { s.releaseAll(); } catch {}
+    }
+    setTimeout(() => {
+      for (const s of old.values()) {
+        try { s.dispose(); } catch {}
+      }
+    }, 2000);
+  }, 100);
 }
