@@ -26,11 +26,15 @@ loadSettings();
 if (hasVisited()) {
   $("splash").classList.add("hidden");
   $("app").classList.remove("hidden");
+  $("mute-btn").textContent = "♪";
+  $("mute-btn").classList.add("muted");
   document.addEventListener("click", async () => {
     if (audioReady) return;
     await initAudio();
     applyAudioSettings();
     audioReady = true;
+    $("mute-btn").textContent = "♫";
+    $("mute-btn").classList.remove("muted");
   }, { once: true });
   start();
 } else {
