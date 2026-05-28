@@ -28,6 +28,8 @@ if (hasVisited()) {
   $("app").classList.remove("hidden");
   $("mute-btn").textContent = "♪";
   $("mute-btn").classList.add("muted");
+  $("mute-btn").disabled = true;
+  $("mute-btn").title = "Click anywhere to start audio";
   document.addEventListener("click", async () => {
     if (audioReady) return;
     await initAudio();
@@ -35,6 +37,8 @@ if (hasVisited()) {
     audioReady = true;
     $("mute-btn").textContent = "♫";
     $("mute-btn").classList.remove("muted");
+    $("mute-btn").disabled = false;
+    $("mute-btn").title = "Mute/Unmute";
   }, { once: true });
   start();
 } else {
@@ -250,7 +254,6 @@ function updateNPM() {
 // ── Mute ──
 
 function toggleMute() {
-  if (!audioReady) return;
   const muted = !isMuted();
   setMuted(muted);
   $("mute-btn").textContent = muted ? "♪" : "♫";
