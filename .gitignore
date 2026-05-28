@@ -5,3 +5,4 @@ venv/
 backend/data/*.json
 backend/data/*.zip
 .DS_Store
+.claude
