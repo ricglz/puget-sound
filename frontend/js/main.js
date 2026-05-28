@@ -1,6 +1,6 @@
 import { PRESETS, getPresetRouteIds } from "./presets.js";
 import { initAudio, playNote, disposeSynths, setVolume, setReverbWet, setMuted, isMuted } from "./audio.js";
-import { initMap, renderRoutes, updateVehicles, flashStop } from "./map.js";
+import { initMap, renderRoutes, updateVehicles, flashStop, clearMap } from "./map.js";
 import {
   loadSettings, getSettings, updateSetting, onSettingsChange, resetSettings, DEFAULTS,
   hasVisited, markVisited, getLastPreset, setLastPreset,
@@ -17,6 +17,7 @@ let customRouteIds = new Set();
 let prevStops = new Map();
 let noteTimestamps = [];
 let audioReady = false;
+let presetGeneration = 0;
 
 const $ = (id) => document.getElementById(id);
 
@@ -112,11 +113,25 @@ function buildPresetUI() {
     dot.style.background = `#${route.color || "666"}`;
 
     const name = document.createElement("span");
-    name.textContent = route.short_name || route.route_id;
+    const displayName = route.long_name
+      ? `${route.short_name} — ${route.long_name}`
+      : route.short_name || route.route_id;
+    name.textContent = displayName;
 
     label.append(cb, dot, name);
     routeList.appendChild(label);
   }
+}
+
+function resetView() {
+  presetGeneration++;
+  clearMap();
+  disposeSynths();
+  deferredArrivals = [];
+  prevStops.clear();
+  noteTimestamps = [];
+  $("recent-list").innerHTML = "";
+  $("notes-per-min").textContent = "♫ 0/min";
 }
 
 function setPreset(name) {
@@ -126,7 +141,7 @@ function setPreset(name) {
   $("current-preset").textContent = PRESETS[name]?.name || "Custom";
   $("custom-section").classList.toggle("hidden", name !== "custom");
   updateSetting("scale", null);
-  disposeSynths();
+  resetView();
   refreshRoutes();
 }
 
@@ -144,15 +159,18 @@ function scheduleArrivals(arrivals) {
   const s = getSettings();
   const immThreshold = s.immediacy;
   const bankedFraction = s.burstTendency;
+  const gen = presetGeneration;
+
+  const guarded = (v) => () => { if (presetGeneration === gen) onArrival(v); };
 
   for (const v of arrivals) {
     const roll = Math.random();
     if (roll < immThreshold) {
       const delay = Math.random() * (POLL_MS - 200);
-      setTimeout(() => onArrival(v), delay);
+      setTimeout(guarded(v), delay);
     } else if (roll < immThreshold + (1 - immThreshold) * (1 - bankedFraction)) {
       const delay = POLL_MS + Math.random() * POLL_MS * 2;
-      setTimeout(() => onArrival(v), delay);
+      setTimeout(guarded(v), delay);
     } else {
       deferredArrivals.push(v);
     }
@@ -162,7 +180,7 @@ function scheduleArrivals(arrivals) {
     const batch = deferredArrivals.splice(0);
     const baseDelay = Math.random() * POLL_MS;
     batch.forEach((v, i) => {
-      setTimeout(() => onArrival(v), baseDelay + i * (150 + Math.random() * 400));
+      setTimeout(guarded(v), baseDelay + i * (150 + Math.random() * 400));
     });
   }
 }
