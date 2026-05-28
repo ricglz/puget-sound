@@ -24,6 +24,12 @@
   <div id="app" class="hidden">
     <div id="map-container"></div>
 
+    <div id="top-left-buttons">
+      <button id="info-btn" title="About">&#9432;</button>
+      <button id="settings-btn" title="Settings">&#9881;</button>
+      <button id="mute-btn" title="Mute/Unmute">&#9835;</button>
+    </div>
+
     <div id="preset-panel">
       <h3>Presets</h3>
       <div id="preset-list"></div>
@@ -43,6 +49,103 @@
       <span id="bus-count">&mdash; buses</span>
       <span id="notes-per-min">&#9833; 0/min</span>
       <span id="current-preset">RapidRide</span>
+    </div>
+  </div>
+
+  <!-- Info Modal -->
+  <div id="info-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <button class="modal-close">&times;</button>
+      <h2>Puget Sound</h2>
+      <p class="modal-tagline">Seattle's transit, playing itself.</p>
+      <p>Each bus line is a voice. Each stop, a note. When a bus arrives at a station, it triggers a musical note &mdash; creating an ever-changing, unscripted soundscape shaped by the city's actual transit patterns.</p>
+      <p>During rush hours the output is dense and overlapping; at night, the pace slows and gaps of silence emerge. No two listening sessions are ever identical.</p>
+      <hr>
+      <h3>Inspiration</h3>
+      <p>Inspired by <a href="https://www.instagram.com/reels/DYSMK3xxzuP/" target="_blank" rel="noopener">@heliouz_</a> and <a href="https://organillero.heliouz.com/" target="_blank" rel="noopener">El Organillero</a> &mdash; a live map of Mexico City's Metrob&uacute;s that turns bus arrivals into a generative musical composition.</p>
+      <hr>
+      <p class="modal-footer">Built with Tone.js, Leaflet, and King County Metro GTFS data.</p>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <button class="modal-close">&times;</button>
+      <h2>Settings</h2>
+
+      <div class="setting-group">
+        <label>Volume <span id="volume-value" class="setting-val">-8 dB</span></label>
+        <input type="range" id="setting-volume" min="-20" max="0" step="1" value="-8">
+      </div>
+
+      <div class="setting-group">
+        <label>Reverb <span id="reverbWet-value" class="setting-val">35%</span></label>
+        <input type="range" id="setting-reverb" min="0" max="100" step="1" value="35">
+      </div>
+
+      <div class="setting-group">
+        <label>Scale</label>
+        <div class="scale-buttons">
+          <button class="scale-btn" data-scale="pentatonic">Pentatonic</button>
+          <button class="scale-btn" data-scale="dorian">Dorian</button>
+          <button class="scale-btn" data-scale="mixolydian">Mixolydian</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>Note durations</label>
+        <div class="dur-sliders">
+          <div class="dur-row">
+            <span class="dur-label">Staccato (0.15s)</span>
+            <input type="range" id="setting-dur:0.15" min="0" max="100" step="1" value="40">
+            <span id="dur:0.15-value" class="setting-val">40</span>
+          </div>
+          <div class="dur-row">
+            <span class="dur-label">Short (0.3s)</span>
+            <input type="range" id="setting-dur:0.3" min="0" max="100" step="1" value="25">
+            <span id="dur:0.3-value" class="setting-val">25</span>
+          </div>
+          <div class="dur-row">
+            <span class="dur-label">Medium (0.6s)</span>
+            <input type="range" id="setting-dur:0.6" min="0" max="100" step="1" value="15">
+            <span id="dur:0.6-value" class="setting-val">15</span>
+          </div>
+          <div class="dur-row">
+            <span class="dur-label">Held (1.2s)</span>
+            <input type="range" id="setting-dur:1.2" min="0" max="100" step="1" value="10">
+            <span id="dur:1.2-value" class="setting-val">10</span>
+          </div>
+          <div class="dur-row">
+            <span class="dur-label">Long hold (2.5s)</span>
+            <input type="range" id="setting-dur:2.5" min="0" max="100" step="1" value="7">
+            <span id="dur:2.5-value" class="setting-val">7</span>
+          </div>
+          <div class="dur-row">
+            <span class="dur-label">Drone (4.0s)</span>
+            <input type="range" id="setting-dur:4.0" min="0" max="100" step="1" value="3">
+            <span id="dur:4.0-value" class="setting-val">3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>Timing</label>
+        <div class="timing-sliders">
+          <div class="dur-row">
+            <span class="dur-label">Immediacy</span>
+            <input type="range" id="setting-immediacy" min="0" max="100" step="5" value="55">
+            <span id="immediacy-value" class="setting-val">55%</span>
+          </div>
+          <div class="dur-row">
+            <span class="dur-label">Burst tendency</span>
+            <input type="range" id="setting-burst" min="0" max="100" step="5" value="33">
+            <span id="burst-value" class="setting-val">33%</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="settings-reset" class="reset-btn">Reset to defaults</button>
     </div>
   </div>
 

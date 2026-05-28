@@ -112,7 +112,7 @@ body{
   padding:.55rem 1.4rem;
   background:rgba(10,10,10,.88);
   border-top:1px solid rgba(255,255,255,.05);
-  font-size:.72rem;color:#555;
+  font-size:.72rem;color:#999;
   backdrop-filter:blur(12px);z-index:1000;
 }
 #status-bar span{white-space:nowrap}
@@ -145,3 +145,127 @@ body{
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+
+/* ── Top-left buttons ── */
+
+#top-left-buttons{
+  position:fixed;top:1rem;left:1rem;
+  display:flex;gap:.5rem;z-index:1000;
+}
+#top-left-buttons button{
+  width:36px;height:36px;
+  background:rgba(10,10,10,.88);
+  border:1px solid rgba(255,255,255,.07);border-radius:8px;
+  color:#777;font-size:1.1rem;cursor:pointer;
+  backdrop-filter:blur(12px);transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+#top-left-buttons button:hover{
+  color:#ddd;border-color:rgba(255,255,255,.15);
+  background:rgba(255,255,255,.06);
+}
+#mute-btn.muted{color:#e55;border-color:rgba(229,85,85,.25)}
+
+/* ── Modal ── */
+
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.65);
+  backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:2000;
+}
+.modal-content{
+  background:rgba(12,12,12,.96);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;padding:2rem;
+  max-width:460px;width:90%;
+  max-height:80vh;overflow-y:auto;
+  position:relative;
+}
+.modal-close{
+  position:absolute;top:.75rem;right:.75rem;
+  background:none;border:none;
+  color:#555;font-size:1.4rem;cursor:pointer;
+  font-family:inherit;
+}
+.modal-close:hover{color:#ccc}
+
+.modal-content h2{
+  font-size:1.3rem;font-weight:300;
+  letter-spacing:.08em;color:#f0f0f0;margin-bottom:.5rem;
+}
+.modal-content h3{
+  font-size:.75rem;text-transform:uppercase;
+  letter-spacing:.12em;color:#666;margin-bottom:.4rem;
+}
+.modal-tagline{font-size:.85rem;color:#888;margin-bottom:1rem}
+.modal-content p{font-size:.78rem;line-height:1.6;color:#999;margin-bottom:.8rem}
+.modal-content hr{
+  border:none;border-top:1px solid rgba(255,255,255,.06);
+  margin:1rem 0;
+}
+.modal-content a{color:#6a9fd8;text-decoration:none}
+.modal-content a:hover{text-decoration:underline;color:#8bb8e8}
+.modal-footer{font-size:.65rem!important;color:#444!important}
+
+/* ── Settings ── */
+
+.setting-group{margin-bottom:1.2rem}
+.setting-group>label{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.72rem;color:#888;margin-bottom:.4rem;
+}
+.setting-val{color:#aaa;font-size:.68rem}
+
+.setting-group input[type="range"]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:4px;
+  background:rgba(255,255,255,.08);border-radius:2px;
+  outline:none;
+}
+.setting-group input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:14px;height:14px;border-radius:50%;
+  background:#888;cursor:pointer;
+  border:2px solid rgba(255,255,255,.15);
+}
+.setting-group input[type="range"]::-webkit-slider-thumb:hover{background:#bbb}
+.setting-group input[type="range"]::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;
+  background:#888;cursor:pointer;border:2px solid rgba(255,255,255,.15);
+}
+
+.scale-buttons{display:flex;gap:.3rem}
+.scale-btn{
+  flex:1;padding:.4rem .5rem;
+  font-family:inherit;font-size:.7rem;
+  background:rgba(255,255,255,.025);color:#999;
+  border:1px solid rgba(255,255,255,.05);border-radius:4px;
+  cursor:pointer;transition:all .2s;
+}
+.scale-btn:hover{background:rgba(255,255,255,.06);color:#ccc}
+.scale-btn.active{
+  background:rgba(255,255,255,.08);
+  border-color:rgba(255,255,255,.15);color:#f0f0f0;
+}
+
+.dur-row{
+  display:flex;align-items:center;gap:.5rem;
+  margin-bottom:.3rem;
+}
+.dur-label{
+  font-size:.65rem;color:#666;
+  min-width:100px;flex-shrink:0;
+}
+.dur-row input[type="range"]{flex:1}
+.dur-row .setting-val{min-width:24px;text-align:right}
+
+.reset-btn{
+  display:block;width:100%;margin-top:.5rem;
+  padding:.45rem;font-family:inherit;font-size:.72rem;
+  background:rgba(255,255,255,.03);color:#777;
+  border:1px solid rgba(255,255,255,.06);border-radius:4px;
+  cursor:pointer;transition:all .2s;
+}
+.reset-btn:hover{background:rgba(255,255,255,.06);color:#ccc}
