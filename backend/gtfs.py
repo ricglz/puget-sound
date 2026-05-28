@@ -7,7 +7,7 @@ import httpx
 
 from config import DEMO_MODE, TRANSIT_DATA_PATH
 
-OBA_VEHICLES_URL = "http://api.pugetsound.onebusaway.org/api/where/vehicles-for-agency/1.json?key=TEST"
+OBA_VEHICLES_URL = "https://api.pugetsound.onebusaway.org/api/where/vehicles-for-agency/1.json?key=TEST"
 
 
 class DemoVehicle:
@@ -157,8 +157,9 @@ class TransitDataStore:
             if "_" in closest_stop:
                 closest_stop = closest_stop.split("_", 1)[-1]
 
+            offset = ts.get("closestStopTimeOffset", 999)
             phase = ts.get("phase", "")
-            status = "STOPPED_AT" if phase == "layover_during" else "IN_TRANSIT_TO"
+            status = "STOPPED_AT" if phase == "layover_during" or offset <= 0 else "IN_TRANSIT_TO"
 
             vid = v.get("vehicleId", "")
             if "_" in vid:
