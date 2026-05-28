@@ -77,6 +77,7 @@ function setPreset(name) {
   activePreset = name;
   document.querySelectorAll(".preset-btn").forEach((b) => b.classList.toggle("active", b.dataset.preset === name));
   $("current-preset").textContent = PRESETS[name]?.name || "Custom";
+  $("custom-section").classList.toggle("hidden", name !== "custom");
   disposeSynths();
   refreshRoutes();
 }
