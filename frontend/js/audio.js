@@ -1,6 +1,7 @@
 /* global Tone */
+import { getDurationWeights } from "./settings.js";
 
-const SCALES = {
+export const SCALES = {
   pentatonic: ["C", "D", "E", "G", "A"],
   dorian: ["C", "D", "Eb", "F", "G", "A", "Bb"],
   mixolydian: ["C", "D", "E", "F", "G", "A", "Bb"],
@@ -44,28 +45,6 @@ const SYNTH_CONFIGS = {
   },
 };
 
-// Weighted random duration: mostly short, occasionally held
-// [duration in seconds, weight]
-const DURATIONS = [
-  [0.15, 40], // staccato — most common
-  [0.3,  25], // short
-  [0.6,  15], // medium
-  [1.2,   10], // held
-  [2.5,   7], // long hold
-  [4.0,   3], // rare drone
-];
-
-const DURATION_TOTAL = DURATIONS.reduce((s, d) => s + d[1], 0);
-
-function pickDuration() {
-  let r = Math.random() * DURATION_TOTAL;
-  for (const [dur, weight] of DURATIONS) {
-    r -= weight;
-    if (r <= 0) return dur;
-  }
-  return DURATIONS[0][0];
-}
-
 let synths = new Map();
 let reverb;
 let volume;
@@ -78,6 +57,22 @@ export async function initAudio() {
   initialized = true;
 }
 
+export function setVolume(db) {
+  if (volume) volume.volume.value = db;
+}
+
+export function setReverbWet(wet) {
+  if (reverb) reverb.wet.value = wet;
+}
+
+export function setMuted(muted) {
+  Tone.Destination.mute = muted;
+}
+
+export function isMuted() {
+  return Tone.Destination.mute;
+}
+
 function getOrCreateSynth(routeId, synthType) {
   if (!synths.has(routeId)) {
     const config = SYNTH_CONFIGS[synthType] || SYNTH_CONFIGS.sine;
@@ -87,6 +82,18 @@ function getOrCreateSynth(routeId, synthType) {
     synths.set(routeId, synth);
   }
   return synths.get(routeId);
+}
+
+function pickDuration() {
+  const weights = getDurationWeights();
+  const total = weights.reduce((s, w) => s + w[1], 0);
+  if (total <= 0) return 0.15;
+  let r = Math.random() * total;
+  for (const [dur, weight] of weights) {
+    r -= weight;
+    if (r <= 0) return dur;
+  }
+  return weights[0][0];
 }
 
 export function playNote(routeId, stopSequence, synthType, scaleName) {
