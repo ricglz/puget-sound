@@ -9,6 +9,14 @@ const DEFAULTS = {
   "dur:4.0": 3,
   immediacy: 0.55,
   burstTendency: 0.33,
+  noteRate: 9,
+  routeCooldownMs: 450,
+  maxNoteQueue: 80,
+  maxDeferredArrivals: 80,
+  maxDeferredFlush: 30,
+  profileIntensity: 1,
+  profileBrightness: 1,
+  stereoWidth: 1,
   scale: null,
 };
 
@@ -32,6 +40,13 @@ function write(key, value) {
 
 function remove(key) {
   localStorage.removeItem(PREFIX + key);
+}
+
+function numberSetting(key, min, max) {
+  const fallback = DEFAULTS[key];
+  const value = Number(settings[key] ?? fallback);
+  const safeValue = Number.isFinite(value) ? value : fallback;
+  return Math.min(max, Math.max(min, safeValue));
 }
 
 export function loadSettings() {
@@ -100,6 +115,24 @@ export function getDurationWeights() {
     [2.5, settings["dur:2.5"]],
     [4.0, settings["dur:4.0"]],
   ];
+}
+
+export function getEventSettings() {
+  return {
+    noteRate: numberSetting("noteRate", 2, 16),
+    routeCooldownMs: numberSetting("routeCooldownMs", 0, 1500),
+    maxNoteQueue: numberSetting("maxNoteQueue", 10, 200),
+    maxDeferredArrivals: numberSetting("maxDeferredArrivals", 10, 200),
+    maxDeferredFlush: numberSetting("maxDeferredFlush", 5, 80),
+  };
+}
+
+export function getProfileSettings() {
+  return {
+    profileIntensity: numberSetting("profileIntensity", 0, 1.5),
+    profileBrightness: numberSetting("profileBrightness", 0.5, 1.5),
+    stereoWidth: numberSetting("stereoWidth", 0, 1.5),
+  };
 }
 
 export { DEFAULTS };
