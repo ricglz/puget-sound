@@ -179,7 +179,7 @@ body{
   background:rgba(12,12,12,.96);
   border:1px solid rgba(255,255,255,.08);
   border-radius:12px;padding:2rem;
-  max-width:460px;width:90%;
+  max-width:520px;width:90%;
   max-height:80vh;overflow-y:auto;
   position:relative;
 }
@@ -214,6 +214,29 @@ body{
 .modal-footer{font-size:.65rem!important;color:#444!important}
 
 /* ── Settings ── */
+
+.settings-tabs{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:.35rem;margin:1rem 0 1.25rem;
+}
+.settings-tab{
+  min-height:32px;padding:.45rem .5rem;
+  font-family:inherit;font-size:.68rem;
+  background:rgba(255,255,255,.025);color:#888;
+  border:1px solid rgba(255,255,255,.05);border-radius:4px;
+  cursor:pointer;transition:all .2s;
+}
+.settings-tab:hover{background:rgba(255,255,255,.06);color:#ccc}
+.settings-tab.active{
+  background:rgba(255,255,255,.08);
+  border-color:rgba(255,255,255,.15);color:#f0f0f0;
+}
+.settings-pane{display:none}
+.settings-pane.active{display:block}
+.settings-section-title{
+  margin-top:1.1rem;margin-bottom:.55rem;
+}
+.settings-pane .settings-section-title:first-child{margin-top:0}
 
 .setting-group{margin-bottom:1.2rem}
 .setting-group>label{
@@ -260,10 +283,10 @@ body{
 }
 .dur-label{
   font-size:.65rem;color:#666;
-  min-width:100px;flex-shrink:0;
+  min-width:118px;flex-shrink:0;
 }
 .dur-row input[type="range"]{flex:1}
-.dur-row .setting-val{min-width:24px;text-align:right}
+.dur-row .setting-val{min-width:48px;text-align:right}
 
 .reset-btn{
   display:block;width:100%;margin-top:.5rem;

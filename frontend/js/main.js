@@ -4,7 +4,7 @@ import { initMap, renderRoutes, updateVehicles, flashStop, clearMap } from "./ma
 import {
   loadSettings, getSettings, updateSetting, onSettingsChange, resetSettings, DEFAULTS,
   hasVisited, markVisited, getLastPreset, setLastPreset,
-  getCustomRoutes, setCustomRoutes, getDurationWeights,
+  getCustomRoutes, setCustomRoutes, getDurationWeights, getEventSettings, getProfileSettings,
 } from "./settings.js";
 
 const POLL_MS = 3000;
@@ -372,7 +372,10 @@ function initMediaSession() {
 
 function initModals() {
   $("info-btn").addEventListener("click", () => $("info-modal").classList.remove("hidden"));
-  $("settings-btn").addEventListener("click", () => openSettingsModal());
+  $("settings-btn").addEventListener("click", () => {
+    setSettingsTab("sound");
+    openSettingsModal();
+  });
   initMuteButton();
   initMediaSession();
 
@@ -387,7 +390,14 @@ function initModals() {
 }
 
 function openSettingsModal() {
+  populateSettingsModal();
+  $("settings-modal").classList.remove("hidden");
+}
+
+function populateSettingsModal() {
   const s = getSettings();
+  const eventSettings = getEventSettings();
+  const profileSettings = getProfileSettings();
   $("setting-volume").value = s.volume;
   $("volume-value").textContent = `${s.volume} dB`;
   $("setting-reverb").value = Math.round(s.reverbWet * 100);
@@ -396,6 +406,22 @@ function openSettingsModal() {
   $("immediacy-value").textContent = `${Math.round(s.immediacy * 100)}%`;
   $("setting-burst").value = Math.round(s.burstTendency * 100);
   $("burst-value").textContent = `${Math.round(s.burstTendency * 100)}%`;
+  $("setting-noteRate").value = eventSettings.noteRate;
+  $("noteRate-value").textContent = `${eventSettings.noteRate}/s`;
+  $("setting-routeCooldownMs").value = eventSettings.routeCooldownMs;
+  $("routeCooldownMs-value").textContent = `${eventSettings.routeCooldownMs} ms`;
+  $("setting-maxNoteQueue").value = eventSettings.maxNoteQueue;
+  $("maxNoteQueue-value").textContent = eventSettings.maxNoteQueue;
+  $("setting-maxDeferredArrivals").value = eventSettings.maxDeferredArrivals;
+  $("maxDeferredArrivals-value").textContent = eventSettings.maxDeferredArrivals;
+  $("setting-maxDeferredFlush").value = eventSettings.maxDeferredFlush;
+  $("maxDeferredFlush-value").textContent = eventSettings.maxDeferredFlush;
+  $("setting-profileIntensity").value = Math.round(profileSettings.profileIntensity * 100);
+  $("profileIntensity-value").textContent = `${Math.round(profileSettings.profileIntensity * 100)}%`;
+  $("setting-profileBrightness").value = Math.round(profileSettings.profileBrightness * 100);
+  $("profileBrightness-value").textContent = `${Math.round(profileSettings.profileBrightness * 100)}%`;
+  $("setting-stereoWidth").value = Math.round(profileSettings.stereoWidth * 100);
+  $("stereoWidth-value").textContent = `${Math.round(profileSettings.stereoWidth * 100)}%`;
 
   const durKeys = ["dur:0.15", "dur:0.3", "dur:0.6", "dur:1.2", "dur:2.5", "dur:4.0"];
   for (const k of durKeys) {
@@ -409,8 +435,15 @@ function openSettingsModal() {
   document.querySelectorAll(".scale-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.scale === effectiveScale);
   });
+}
 
-  $("settings-modal").classList.remove("hidden");
+function setSettingsTab(name) {
+  document.querySelectorAll(".settings-tab").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.settingsTab === name);
+  });
+  document.querySelectorAll(".settings-pane").forEach((pane) => {
+    pane.classList.toggle("active", pane.dataset.settingsPane === name);
+  });
 }
 
 function setupSettingsHandlers() {
@@ -430,6 +463,14 @@ function setupSettingsHandlers() {
   slider("setting-reverb", "reverbWet", (v) => `${v}%`, (v) => v / 100);
   slider("setting-immediacy", "immediacy", (v) => `${v}%`, (v) => v / 100);
   slider("setting-burst", "burstTendency", (v) => `${v}%`, (v) => v / 100);
+  slider("setting-noteRate", "noteRate", (v) => `${v}/s`);
+  slider("setting-routeCooldownMs", "routeCooldownMs", (v) => `${v} ms`);
+  slider("setting-maxNoteQueue", "maxNoteQueue", (v) => `${v}`);
+  slider("setting-maxDeferredArrivals", "maxDeferredArrivals", (v) => `${v}`);
+  slider("setting-maxDeferredFlush", "maxDeferredFlush", (v) => `${v}`);
+  slider("setting-profileIntensity", "profileIntensity", (v) => `${v}%`, (v) => v / 100);
+  slider("setting-profileBrightness", "profileBrightness", (v) => `${v}%`, (v) => v / 100);
+  slider("setting-stereoWidth", "stereoWidth", (v) => `${v}%`, (v) => v / 100);
 
   const durKeys = ["dur:0.15", "dur:0.3", "dur:0.6", "dur:1.2", "dur:2.5", "dur:4.0"];
   for (const k of durKeys) {
@@ -453,9 +494,13 @@ function setupSettingsHandlers() {
     });
   });
 
+  document.querySelectorAll(".settings-tab").forEach((btn) => {
+    btn.addEventListener("click", () => setSettingsTab(btn.dataset.settingsTab));
+  });
+
   $("settings-reset")?.addEventListener("click", () => {
     resetSettings();
-    openSettingsModal();
+    populateSettingsModal();
   });
 }
 

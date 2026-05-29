@@ -80,64 +80,112 @@
       <button class="modal-close">&times;</button>
       <h2>Settings</h2>
 
-      <div class="setting-group">
-        <label>Volume <span id="volume-value" class="setting-val">-8 dB</span></label>
-        <input type="range" id="setting-volume" min="-20" max="0" step="1" value="-8">
+      <div class="settings-tabs">
+        <button class="settings-tab active" data-settings-tab="sound">Sound</button>
+        <button class="settings-tab" data-settings-tab="events">Events</button>
+        <button class="settings-tab" data-settings-tab="advanced">Advanced</button>
       </div>
 
-      <div class="setting-group">
-        <label>Reverb <span id="reverbWet-value" class="setting-val">35%</span></label>
-        <input type="range" id="setting-reverb" min="0" max="100" step="1" value="35">
-      </div>
+      <div class="settings-pane active" data-settings-pane="sound">
+        <h3 class="settings-section-title">Mix</h3>
 
-      <div class="setting-group">
-        <label>Scale</label>
-        <div class="scale-buttons">
-          <button class="scale-btn" data-scale="pentatonic">Pentatonic</button>
-          <button class="scale-btn" data-scale="dorian">Dorian</button>
-          <button class="scale-btn" data-scale="mixolydian">Mixolydian</button>
+        <div class="setting-group">
+          <label>Volume <span id="volume-value" class="setting-val">-8 dB</span></label>
+          <input type="range" id="setting-volume" min="-20" max="0" step="1" value="-8">
+        </div>
+
+        <div class="setting-group">
+          <label>Reverb <span id="reverbWet-value" class="setting-val">35%</span></label>
+          <input type="range" id="setting-reverb" min="0" max="100" step="1" value="35">
+        </div>
+
+        <h3 class="settings-section-title">Musical shape</h3>
+
+        <div class="setting-group">
+          <label>Scale</label>
+          <div class="scale-buttons">
+            <button class="scale-btn" data-scale="pentatonic">Pentatonic</button>
+            <button class="scale-btn" data-scale="dorian">Dorian</button>
+            <button class="scale-btn" data-scale="mixolydian">Mixolydian</button>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label>Note durations</label>
+          <div class="dur-sliders">
+            <div class="dur-row">
+              <span class="dur-label">Staccato (0.15s)</span>
+              <input type="range" id="setting-dur:0.15" min="0" max="100" step="1" value="40">
+              <span id="dur:0.15-value" class="setting-val">40</span>
+            </div>
+            <div class="dur-row">
+              <span class="dur-label">Short (0.3s)</span>
+              <input type="range" id="setting-dur:0.3" min="0" max="100" step="1" value="25">
+              <span id="dur:0.3-value" class="setting-val">25</span>
+            </div>
+            <div class="dur-row">
+              <span class="dur-label">Medium (0.6s)</span>
+              <input type="range" id="setting-dur:0.6" min="0" max="100" step="1" value="15">
+              <span id="dur:0.6-value" class="setting-val">15</span>
+            </div>
+            <div class="dur-row">
+              <span class="dur-label">Held (1.2s)</span>
+              <input type="range" id="setting-dur:1.2" min="0" max="100" step="1" value="10">
+              <span id="dur:1.2-value" class="setting-val">10</span>
+            </div>
+            <div class="dur-row">
+              <span class="dur-label">Long hold (2.5s)</span>
+              <input type="range" id="setting-dur:2.5" min="0" max="100" step="1" value="7">
+              <span id="dur:2.5-value" class="setting-val">7</span>
+            </div>
+            <div class="dur-row">
+              <span class="dur-label">Drone (4.0s)</span>
+              <input type="range" id="setting-dur:4.0" min="0" max="100" step="1" value="3">
+              <span id="dur:4.0-value" class="setting-val">3</span>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="settings-section-title">Route color</h3>
+
+        <div class="setting-group">
+          <div class="dur-row">
+            <span class="dur-label">Diversity</span>
+            <input type="range" id="setting-profileIntensity" min="0" max="150" step="5" value="100">
+            <span id="profileIntensity-value" class="setting-val">100%</span>
+          </div>
+          <div class="dur-row">
+            <span class="dur-label">Brightness</span>
+            <input type="range" id="setting-profileBrightness" min="50" max="150" step="5" value="100">
+            <span id="profileBrightness-value" class="setting-val">100%</span>
+          </div>
+          <div class="dur-row">
+            <span class="dur-label">Stereo spread</span>
+            <input type="range" id="setting-stereoWidth" min="0" max="150" step="5" value="100">
+            <span id="stereoWidth-value" class="setting-val">100%</span>
+          </div>
         </div>
       </div>
 
-      <div class="setting-group">
-        <label>Note durations</label>
-        <div class="dur-sliders">
+      <div class="settings-pane" data-settings-pane="events">
+        <h3 class="settings-section-title">Density</h3>
+
+        <div class="setting-group">
           <div class="dur-row">
-            <span class="dur-label">Staccato (0.15s)</span>
-            <input type="range" id="setting-dur:0.15" min="0" max="100" step="1" value="40">
-            <span id="dur:0.15-value" class="setting-val">40</span>
+            <span class="dur-label">Notes per second</span>
+            <input type="range" id="setting-noteRate" min="2" max="16" step="1" value="9">
+            <span id="noteRate-value" class="setting-val">9/s</span>
           </div>
           <div class="dur-row">
-            <span class="dur-label">Short (0.3s)</span>
-            <input type="range" id="setting-dur:0.3" min="0" max="100" step="1" value="25">
-            <span id="dur:0.3-value" class="setting-val">25</span>
-          </div>
-          <div class="dur-row">
-            <span class="dur-label">Medium (0.6s)</span>
-            <input type="range" id="setting-dur:0.6" min="0" max="100" step="1" value="15">
-            <span id="dur:0.6-value" class="setting-val">15</span>
-          </div>
-          <div class="dur-row">
-            <span class="dur-label">Held (1.2s)</span>
-            <input type="range" id="setting-dur:1.2" min="0" max="100" step="1" value="10">
-            <span id="dur:1.2-value" class="setting-val">10</span>
-          </div>
-          <div class="dur-row">
-            <span class="dur-label">Long hold (2.5s)</span>
-            <input type="range" id="setting-dur:2.5" min="0" max="100" step="1" value="7">
-            <span id="dur:2.5-value" class="setting-val">7</span>
-          </div>
-          <div class="dur-row">
-            <span class="dur-label">Drone (4.0s)</span>
-            <input type="range" id="setting-dur:4.0" min="0" max="100" step="1" value="3">
-            <span id="dur:4.0-value" class="setting-val">3</span>
+            <span class="dur-label">Route spacing</span>
+            <input type="range" id="setting-routeCooldownMs" min="0" max="1500" step="50" value="450">
+            <span id="routeCooldownMs-value" class="setting-val">450 ms</span>
           </div>
         </div>
-      </div>
 
-      <div class="setting-group">
-        <label>Timing</label>
-        <div class="timing-sliders">
+        <h3 class="settings-section-title">Timing</h3>
+
+        <div class="setting-group">
           <div class="dur-row">
             <span class="dur-label">Immediacy</span>
             <input type="range" id="setting-immediacy" min="0" max="100" step="5" value="55">
@@ -151,7 +199,30 @@
         </div>
       </div>
 
-      <button id="settings-reset" class="reset-btn">Reset to defaults</button>
+      <div class="settings-pane" data-settings-pane="advanced">
+        <h3 class="settings-section-title">Queue</h3>
+
+        <div class="setting-group">
+          <div class="dur-row">
+            <span class="dur-label">Queue size</span>
+            <input type="range" id="setting-maxNoteQueue" min="10" max="200" step="10" value="80">
+            <span id="maxNoteQueue-value" class="setting-val">80</span>
+          </div>
+          <div class="dur-row">
+            <span class="dur-label">Deferred bank</span>
+            <input type="range" id="setting-maxDeferredArrivals" min="10" max="200" step="10" value="80">
+            <span id="maxDeferredArrivals-value" class="setting-val">80</span>
+          </div>
+          <div class="dur-row">
+            <span class="dur-label">Flush batch</span>
+            <input type="range" id="setting-maxDeferredFlush" min="5" max="80" step="5" value="30">
+            <span id="maxDeferredFlush-value" class="setting-val">30</span>
+          </div>
+        </div>
+
+        <h3 class="settings-section-title">Reset</h3>
+        <button id="settings-reset" class="reset-btn">Reset to defaults</button>
+      </div>
     </div>
   </div>
 
