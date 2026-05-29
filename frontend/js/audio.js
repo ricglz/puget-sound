@@ -1,5 +1,5 @@
 /* global Tone */
-import { getDurationWeights } from "./settings.js";
+import { getDurationWeights, getProfileSettings } from "./settings.js";
 
 export const SCALES = {
   pentatonic: ["C", "D", "E", "G", "A"],
@@ -181,16 +181,23 @@ function buildRouteProfile(route, presetSynthType) {
   const family = getRouteFamily(route);
   const base = FAMILY_PROFILES[family] || FAMILY_PROFILES.local;
   const hash = hashString(route.route_id || route.short_name || "");
+  const { profileIntensity, profileBrightness, stereoWidth } = getProfileSettings();
   const synthTypes = base.synths.length > 0 ? base.synths : [presetSynthType];
   const panRaw = ((hash % 101) / 50) - 1;
+  const basePan = panRaw * base.panWidth;
+  const baseCutoff = base.cutoff + (hash % 5) * 120;
+  const baseTranspose = base.transpose[hash % base.transpose.length];
+  const baseScaleOffset = hash % 11;
   return {
     ...base,
     hash,
     synthType: synthTypes[hash % synthTypes.length] || presetSynthType,
-    pan: panRaw * base.panWidth,
-    cutoff: base.cutoff + (hash % 5) * 120,
-    transposeSemitones: base.transpose[hash % base.transpose.length],
-    scaleOffset: hash % 11,
+    pan: clamp(basePan * stereoWidth, -1, 1),
+    cutoff: clamp(baseCutoff * profileBrightness, 300, 3500),
+    transposeSemitones: Math.round(baseTranspose * profileIntensity),
+    scaleOffset: Math.round(baseScaleOffset * profileIntensity),
+    durationScale: 1 + (base.durationScale - 1) * profileIntensity,
+    velocityScale: 1 + (base.velocityScale - 1) * profileIntensity,
   };
 }
 
@@ -211,7 +218,10 @@ function getOrCreateVoice(route, profile) {
     pan.connect(volume);
     voices.set(routeId, { synth, filter, pan });
   }
-  return voices.get(routeId);
+  const voice = voices.get(routeId);
+  voice.filter.frequency.value = profile.cutoff;
+  voice.pan.pan.value = profile.pan;
+  return voice;
 }
 
 function pickDuration() {
