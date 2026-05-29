@@ -9,11 +9,6 @@ import {
 
 const POLL_MS = 3000;
 const NPM_WINDOW = 60_000;
-const NOTE_INTERVAL_MS = 110;
-const MAX_NOTE_QUEUE = 80;
-const MAX_DEFERRED_ARRIVALS = 80;
-const MAX_DEFERRED_FLUSH = 30;
-const ROUTE_NOTE_COOLDOWN_MS = 450;
 
 let transitData = null;
 let activePreset = "pugetMix";
@@ -66,6 +61,7 @@ async function ensureAudioStarted() {
 
 onSettingsChange((key) => {
   if (key === "volume" || key === "reverbWet" || key === null) applyAudioSettings();
+  if (key === "noteRate" || key === null) restartNoteQueue();
 });
 
 async function start() {
@@ -176,6 +172,10 @@ let deferredArrivals = [];
 
 function stopNoteQueue() {
   noteQueue = [];
+  stopNoteTimer();
+}
+
+function stopNoteTimer() {
   if (noteQueueTimer) {
     clearInterval(noteQueueTimer);
     noteQueueTimer = null;
@@ -184,13 +184,21 @@ function stopNoteQueue() {
 
 function startNoteQueue() {
   if (noteQueueTimer) return;
-  noteQueueTimer = setInterval(playQueuedNote, NOTE_INTERVAL_MS);
+  const intervalMs = 1000 / getEventSettings().noteRate;
+  noteQueueTimer = setInterval(playQueuedNote, intervalMs);
+}
+
+function restartNoteQueue() {
+  if (!noteQueueTimer) return;
+  stopNoteTimer();
+  startNoteQueue();
 }
 
 function enqueueNote(route, stop) {
+  const { routeCooldownMs, maxNoteQueue } = getEventSettings();
   const now = Date.now();
   const lastPlayed = lastRouteNoteAt.get(route.route_id) || 0;
-  if (now - lastPlayed < ROUTE_NOTE_COOLDOWN_MS) return;
+  if (now - lastPlayed < routeCooldownMs) return;
   lastRouteNoteAt.set(route.route_id, now);
 
   const event = { route, stop, presetName: activePreset, gen: presetGeneration };
@@ -198,7 +206,7 @@ function enqueueNote(route, stop) {
   if (pendingForRoute >= 0) {
     noteQueue[pendingForRoute] = event;
   } else {
-    if (noteQueue.length >= MAX_NOTE_QUEUE) noteQueue.shift();
+    if (noteQueue.length >= maxNoteQueue) noteQueue.shift();
     noteQueue.push(event);
   }
 
@@ -225,6 +233,7 @@ function playQueuedNote() {
 
 function scheduleArrivals(arrivals) {
   const s = getSettings();
+  const { maxDeferredArrivals, maxDeferredFlush } = getEventSettings();
   const immThreshold = s.immediacy;
   const bankedFraction = s.burstTendency;
   const gen = presetGeneration;
@@ -240,13 +249,13 @@ function scheduleArrivals(arrivals) {
       const delay = POLL_MS + Math.random() * POLL_MS * 2;
       setTimeout(guarded(v), delay);
     } else {
-      if (deferredArrivals.length >= MAX_DEFERRED_ARRIVALS) deferredArrivals.shift();
+      if (deferredArrivals.length >= maxDeferredArrivals) deferredArrivals.shift();
       deferredArrivals.push(v);
     }
   }
 
   if (deferredArrivals.length > 0 && Math.random() < 0.3) {
-    const batch = deferredArrivals.splice(0, MAX_DEFERRED_FLUSH);
+    const batch = deferredArrivals.splice(0, maxDeferredFlush);
     const baseDelay = Math.random() * POLL_MS;
     batch.forEach((v, i) => {
       setTimeout(guarded(v), baseDelay + i * (150 + Math.random() * 400));
