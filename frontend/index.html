@@ -61,10 +61,16 @@
       <p>Each bus line is a voice. Each stop, a note. When a bus arrives at a station, it triggers a musical note &mdash; creating an ever-changing, unscripted soundscape shaped by the city's actual transit patterns.</p>
       <p>During rush hours the output is dense and overlapping; at night, the pace slows and gaps of silence emerge. No two listening sessions are ever identical.</p>
       <hr>
+      <h3>Data</h3>
+      <p><strong>Where it comes from.</strong> Route and stop data is generated from public GTFS feeds published by <a href="https://metro.kingcounty.gov/GTFS/google_daily_transit.zip" target="_blank" rel="noopener">King County Metro</a> and <a href="https://www.soundtransit.org/GTFS-rail/40_gtfs.zip" target="_blank" rel="noopener">Sound Transit</a>. Live vehicle positions come through the <a href="https://pugetsound.onebusaway.org/" target="_blank" rel="noopener">OneBusAway Puget Sound</a> vehicle feed.</p>
+      <p><strong>What the map represents.</strong> The visible routes are a curated set of high-activity Puget Sound transit lines, not every route in the public feeds. Stop dots come from GTFS stop data, and route lines connect stops from a representative trip, so they should be read as musical/transit structure rather than exact street geometry.</p>
+      <p><strong>What the sound represents.</strong> A note plays when the app detects a vehicle arriving at, or stopped at, a stop on one of the selected routes. The stop's sequence along the route determines the pitch; the route and preset influence the instrument and scale.</p>
+      <p><strong>Limits.</strong> Vehicle positions can lag, disappear, or be incomplete depending on the source feed. The app polls periodically and smooths the musical output, so the sound is an interpretation of live transit movement, not an official operations display or schedule tracker.</p>
+      <hr>
       <h3>Inspiration</h3>
       <p>Inspired by <a href="https://www.instagram.com/reels/DYSMK3xxzuP/" target="_blank" rel="noopener">@heliouz_</a> and <a href="https://organillero.heliouz.com/" target="_blank" rel="noopener">El Organillero</a> &mdash; a live map of Mexico City's Metrob&uacute;s that turns bus arrivals into a generative musical composition.</p>
       <hr>
-      <p class="modal-footer">Built with Tone.js, Leaflet, King County Metro GTFS data, and Sound Transit GTFS data. <a href="https://github.com/ricglz/puget-sound" target="_blank" rel="noopener">Source on GitHub</a>.</p>
+      <p class="modal-footer">Built with Tone.js, Leaflet, public GTFS data, and OneBusAway vehicle data. <a href="https://github.com/ricglz/puget-sound" target="_blank" rel="noopener">Source on GitHub</a>.</p>
     </div>
   </div>
 

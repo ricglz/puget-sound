@@ -201,6 +201,10 @@ body{
 }
 .modal-tagline{font-size:.85rem;color:#888;margin-bottom:1rem}
 .modal-content p{font-size:.78rem;line-height:1.6;color:#999;margin-bottom:.8rem}
+.modal-content strong{
+  color:#bbb;
+  font-weight:400;
+}
 .modal-content hr{
   border:none;border-top:1px solid rgba(255,255,255,.06);
   margin:1rem 0;
