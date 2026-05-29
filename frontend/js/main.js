@@ -217,7 +217,7 @@ function playQueuedNote() {
   const preset = PRESETS[event.presetName] || PRESETS.rapidride;
   const s = getSettings();
   const effectiveScale = s.scale || preset.scale;
-  playNote(event.route.route_id, event.stop.sequence, preset.synth, effectiveScale);
+  playNote(event.route, event.stop.sequence, preset.synth, effectiveScale);
 
   noteTimestamps.push(Date.now());
   addRecent(event.route, event.stop);
