@@ -76,7 +76,7 @@ export function markVisited() {
 }
 
 export function getLastPreset() {
-  return read("preset", "rapidride");
+  return read("preset", "pugetMix");
 }
 
 export function setLastPreset(name) {

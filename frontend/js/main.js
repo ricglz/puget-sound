@@ -11,7 +11,7 @@ const POLL_MS = 3000;
 const NPM_WINDOW = 60_000;
 
 let transitData = null;
-let activePreset = "rapidride";
+let activePreset = "pugetMix";
 let activeRouteIds = [];
 let customRouteIds = new Set();
 let prevStops = new Map();
@@ -66,10 +66,11 @@ async function start() {
   buildPresetUI();
 
   const saved = getLastPreset();
-  if (saved === "custom") {
+  const initialPreset = PRESETS[saved] ? saved : "pugetMix";
+  if (initialPreset === "custom") {
     customRouteIds = new Set(getCustomRoutes());
   }
-  setPreset(saved);
+  setPreset(initialPreset);
 
   poll();
   setInterval(poll, POLL_MS);
@@ -139,11 +140,12 @@ function resetView() {
 }
 
 function setPreset(name) {
-  activePreset = name;
-  setLastPreset(name);
-  document.querySelectorAll(".preset-btn").forEach((b) => b.classList.toggle("active", b.dataset.preset === name));
-  $("current-preset").textContent = PRESETS[name]?.name || "Custom";
-  $("custom-section").classList.toggle("hidden", name !== "custom");
+  const presetName = PRESETS[name] ? name : "pugetMix";
+  activePreset = presetName;
+  setLastPreset(presetName);
+  document.querySelectorAll(".preset-btn").forEach((b) => b.classList.toggle("active", b.dataset.preset === presetName));
+  $("current-preset").textContent = PRESETS[presetName]?.name || "Custom";
+  $("custom-section").classList.toggle("hidden", presetName !== "custom");
   updateSetting("scale", null);
   resetView();
   refreshRoutes();
