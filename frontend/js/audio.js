@@ -48,6 +48,8 @@ const SYNTH_CONFIGS = {
 let synths = new Map();
 let reverb;
 let volume;
+let compressor;
+let limiter;
 let initialized = false;
 let initPromise = null;
 
@@ -56,7 +58,14 @@ export async function initAudio() {
   if (initialized) return;
   if (!initPromise) {
     initPromise = (async () => {
-      reverb = new Tone.Reverb({ decay: 3, wet: 0.35 }).toDestination();
+      limiter = new Tone.Limiter(-1).toDestination();
+      compressor = new Tone.Compressor({
+        threshold: -18,
+        ratio: 3,
+        attack: 0.003,
+        release: 0.25,
+      }).connect(limiter);
+      reverb = new Tone.Reverb({ decay: 3, wet: 0.35 }).connect(compressor);
       volume = new Tone.Volume(-8).connect(reverb);
       initialized = true;
     })();
@@ -88,7 +97,7 @@ function getOrCreateSynth(routeId, synthType) {
   if (!synths.has(routeId)) {
     const config = SYNTH_CONFIGS[synthType] || SYNTH_CONFIGS.sine;
     const synth = new Tone.PolySynth(config.voice, config.options);
-    synth.maxPolyphony = 8;
+    synth.maxPolyphony = 3;
     synth.connect(volume);
     synths.set(routeId, synth);
   }

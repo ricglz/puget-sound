@@ -9,13 +9,22 @@ import {
 
 const POLL_MS = 3000;
 const NPM_WINDOW = 60_000;
+const NOTE_INTERVAL_MS = 110;
+const MAX_NOTE_QUEUE = 80;
+const MAX_DEFERRED_ARRIVALS = 80;
+const MAX_DEFERRED_FLUSH = 30;
+const ROUTE_NOTE_COOLDOWN_MS = 450;
 
 let transitData = null;
 let activePreset = "pugetMix";
 let activeRouteIds = [];
 let customRouteIds = new Set();
 let prevStops = new Map();
+let stopsPrimed = false;
 let noteTimestamps = [];
+let noteQueue = [];
+let noteQueueTimer = null;
+let lastRouteNoteAt = new Map();
 let audioReady = false;
 let muteHandlerAttached = false;
 let presetGeneration = 0;
@@ -132,9 +141,12 @@ function resetView() {
   presetGeneration++;
   clearMap();
   disposeSynths();
+  stopNoteQueue();
   deferredArrivals = [];
   prevStops.clear();
+  stopsPrimed = false;
   noteTimestamps = [];
+  lastRouteNoteAt.clear();
   $("recent-list").innerHTML = "";
   $("notes-per-min").textContent = "♫ 0/min";
 }
@@ -156,10 +168,60 @@ function refreshRoutes() {
     activePreset === "custom"
       ? [...customRouteIds]
       : getPresetRouteIds(activePreset, transitData.routes);
+  stopsPrimed = false;
   renderRoutes(transitData.routes, activeRouteIds);
 }
 
 let deferredArrivals = [];
+
+function stopNoteQueue() {
+  noteQueue = [];
+  if (noteQueueTimer) {
+    clearInterval(noteQueueTimer);
+    noteQueueTimer = null;
+  }
+}
+
+function startNoteQueue() {
+  if (noteQueueTimer) return;
+  noteQueueTimer = setInterval(playQueuedNote, NOTE_INTERVAL_MS);
+}
+
+function enqueueNote(route, stop) {
+  const now = Date.now();
+  const lastPlayed = lastRouteNoteAt.get(route.route_id) || 0;
+  if (now - lastPlayed < ROUTE_NOTE_COOLDOWN_MS) return;
+  lastRouteNoteAt.set(route.route_id, now);
+
+  const event = { route, stop, presetName: activePreset, gen: presetGeneration };
+  const pendingForRoute = noteQueue.findIndex((e) => e.route.route_id === route.route_id);
+  if (pendingForRoute >= 0) {
+    noteQueue[pendingForRoute] = event;
+  } else {
+    if (noteQueue.length >= MAX_NOTE_QUEUE) noteQueue.shift();
+    noteQueue.push(event);
+  }
+
+  startNoteQueue();
+}
+
+function playQueuedNote() {
+  if (noteQueue.length === 0) {
+    stopNoteQueue();
+    return;
+  }
+
+  const event = noteQueue.shift();
+  if (!event || event.gen !== presetGeneration) return;
+
+  const preset = PRESETS[event.presetName] || PRESETS.rapidride;
+  const s = getSettings();
+  const effectiveScale = s.scale || preset.scale;
+  playNote(event.route.route_id, event.stop.sequence, preset.synth, effectiveScale);
+
+  noteTimestamps.push(Date.now());
+  addRecent(event.route, event.stop);
+}
 
 function scheduleArrivals(arrivals) {
   const s = getSettings();
@@ -178,12 +240,13 @@ function scheduleArrivals(arrivals) {
       const delay = POLL_MS + Math.random() * POLL_MS * 2;
       setTimeout(guarded(v), delay);
     } else {
+      if (deferredArrivals.length >= MAX_DEFERRED_ARRIVALS) deferredArrivals.shift();
       deferredArrivals.push(v);
     }
   }
 
   if (deferredArrivals.length > 0 && Math.random() < 0.3) {
-    const batch = deferredArrivals.splice(0);
+    const batch = deferredArrivals.splice(0, MAX_DEFERRED_FLUSH);
     const baseDelay = Math.random() * POLL_MS;
     batch.forEach((v, i) => {
       setTimeout(guarded(v), baseDelay + i * (150 + Math.random() * 400));
@@ -194,10 +257,20 @@ function scheduleArrivals(arrivals) {
 async function poll() {
   try {
     const vehicles = await fetch("/api/vehicles").then((r) => r.json());
+    const activeVehicles = vehicles.filter((v) => activeRouteIds.includes(v.route_id));
+
+    if (!stopsPrimed) {
+      for (const v of activeVehicles) {
+        prevStops.set(v.vehicle_id, v.current_status === "STOPPED_AT" ? v.stop_id : null);
+      }
+      stopsPrimed = true;
+      updateVehicles(vehicles, activeRouteIds);
+      $("bus-count").textContent = `${activeVehicles.length} buses`;
+      return;
+    }
 
     const arrivals = [];
-    for (const v of vehicles) {
-      if (!activeRouteIds.includes(v.route_id)) continue;
+    for (const v of activeVehicles) {
       const prev = prevStops.get(v.vehicle_id);
       if (v.current_status === "STOPPED_AT" && v.stop_id && v.stop_id !== prev) {
         arrivals.push(v);
@@ -208,8 +281,7 @@ async function poll() {
     scheduleArrivals(arrivals);
 
     updateVehicles(vehicles, activeRouteIds);
-    const count = vehicles.filter((v) => activeRouteIds.includes(v.route_id)).length;
-    $("bus-count").textContent = `${count} buses`;
+    $("bus-count").textContent = `${activeVehicles.length} buses`;
   } catch (e) {
     console.error("poll:", e);
   }
@@ -221,14 +293,8 @@ function onArrival(vehicle) {
   const stop = route.stops.find((s) => s.stop_id === vehicle.stop_id);
   if (!stop) return;
 
-  const preset = PRESETS[activePreset] || PRESETS.rapidride;
-  const s = getSettings();
-  const effectiveScale = s.scale || preset.scale;
-  playNote(vehicle.route_id, stop.sequence, preset.synth, effectiveScale);
   flashStop(vehicle.stop_id, `#${route.color || "666"}`);
-
-  noteTimestamps.push(Date.now());
-  addRecent(route, stop);
+  enqueueNote(route, stop);
 }
 
 function addRecent(route, stop) {
