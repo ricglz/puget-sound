@@ -11,16 +11,27 @@ import httpx
 DATA_DIR = Path(__file__).parent / "data"
 OUTPUT = DATA_DIR / "transit_data.json"
 
+KCM_TARGETS = {
+    "A Line", "B Line", "C Line", "D Line", "E Line", "F Line", "G Line", "H Line",
+    "2", "3", "4", "7", "8", "10", "11", "12", "13", "14",
+    "21", "24", "28", "31", "32", "33", "36", "40", "44", "45",
+    "48", "49", "50", "60", "62", "65", "67", "70", "75",
+    "522", "542", "545", "550", "554", "556", "566", "570",
+    "First Hill Streetcar", "South Lake Union Streetcar",
+}
+
+SOUND_TRANSIT_TARGETS = {"1 Line", "2 Line", "T Line", "N Line", "S Line"}
+
 FEEDS = [
     {
         "name": "King County Metro",
         "url": "https://metro.kingcounty.gov/GTFS/google_daily_transit.zip",
-        "targets": {"A Line", "C Line", "D Line", "E Line", "G Line", "H Line", "2", "7", "8", "44", "45", "67"},
+        "targets": KCM_TARGETS,
     },
     {
         "name": "Sound Transit",
         "url": "https://www.soundtransit.org/GTFS-rail/40_gtfs.zip",
-        "targets": {"1 Line", "2 Line"},
+        "targets": SOUND_TRANSIT_TARGETS,
     },
 ]
 
