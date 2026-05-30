@@ -22,7 +22,7 @@ logger.info("DEMO_MODE=%s, routes=%d, trip_map_entries=%d",
 
 
 @app.get("/api/vehicles")
-async def vehicles():
+def vehicles():
     data = store.get_vehicles()
     logger.info("vehicles: %d returned", len(data))
     return data

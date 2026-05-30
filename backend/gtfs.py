@@ -1,13 +1,13 @@
 import json
+import logging
 import time
 import random
-from pathlib import Path
 
 import httpx
 
-from config import DEMO_MODE, TRANSIT_DATA_PATH
+from config import DEMO_MODE, FETCH_INTERVAL, OBA_VEHICLES_URL, TRANSIT_DATA_PATH
 
-OBA_VEHICLES_URL = "https://api.pugetsound.onebusaway.org/api/where/vehicles-for-agency/1.json?key=TEST"
+logger = logging.getLogger("puget-sound.gtfs")
 
 
 class DemoVehicle:
@@ -18,10 +18,17 @@ class DemoVehicle:
         self.current_index = random.randint(0, len(stops) - 1)
         self.progress = 0.0
         self.direction = random.choice([1, -1])
+        self._correct_terminal_direction()
         self.at_stop = True
         self.dwell_remaining = random.uniform(3, 12)
         self.speed = random.uniform(0.04, 0.10)
         self._last_update = time.time()
+
+    def _correct_terminal_direction(self):
+        if self.current_index <= 0:
+            self.direction = 1
+        elif self.current_index >= len(self.stops) - 1:
+            self.direction = -1
 
     def update(self) -> dict:
         now = time.time()
@@ -31,6 +38,7 @@ class DemoVehicle:
         if self.at_stop:
             self.dwell_remaining -= dt
             if self.dwell_remaining <= 0:
+                self._correct_terminal_direction()
                 self.at_stop = False
                 self.progress = 0.0
         else:
@@ -126,15 +134,21 @@ class TransitDataStore:
 
     def _fetch_oba(self) -> list[dict]:
         now = time.time()
-        if now - self._cache_time < 30:
+        if now - self._cache_time < FETCH_INTERVAL:
             return self._cached_vehicles
 
         try:
             resp = httpx.get(OBA_VEHICLES_URL, timeout=10, follow_redirects=True)
             resp.raise_for_status()
             data = resp.json()
-        except Exception as e:
-            print(f"OBA fetch error: {e}")
+        except httpx.HTTPStatusError as e:
+            logger.warning("OBA fetch failed: status=%s", e.response.status_code)
+            return self._cached_vehicles
+        except httpx.HTTPError as e:
+            logger.warning("OBA fetch error: %s", e)
+            return self._cached_vehicles
+        except ValueError as e:
+            logger.warning("OBA fetch returned invalid JSON: %s", e)
             return self._cached_vehicles
 
         vehicles = []

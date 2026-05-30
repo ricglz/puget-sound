@@ -17,3 +17,8 @@ FEEDS = {
 FETCH_INTERVAL = 30
 DATA_DIR = Path(__file__).parent / "data"
 TRANSIT_DATA_PATH = DATA_DIR / "transit_data.json"
+OBA_API_KEY = os.getenv("OBA_API_KEY", "TEST")
+OBA_VEHICLES_URL = os.getenv(
+    "OBA_VEHICLES_URL",
+    f"https://api.pugetsound.onebusaway.org/api/where/vehicles-for-agency/1.json?key={OBA_API_KEY}",
+)
