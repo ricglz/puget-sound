@@ -2,17 +2,21 @@ import { PRESETS, getPresetRouteIds } from "./presets.js";
 import { initAudio, playNote, disposeSynths, setVolume, setReverbWet, setMuted, isMuted } from "./audio.js";
 import { initMap, renderRoutes, updateVehicles, flashStop, clearMap } from "./map.js";
 import {
-  loadSettings, getSettings, updateSetting, onSettingsChange, resetSettings, DEFAULTS,
+  loadSettings, getSettings, updateSetting, onSettingsChange, resetSettings,
   hasVisited, markVisited, getLastPreset, setLastPreset,
-  getCustomRoutes, setCustomRoutes, getDurationWeights, getEventSettings, getProfileSettings,
+  getCustomRoutes, setCustomRoutes, getAudioSettings, getTimingSettings,
+  getEventSettings, getProfileSettings,
 } from "./settings.js";
 
 const POLL_MS = 3000;
 const NPM_WINDOW = 60_000;
 
 let transitData = null;
+let routeById = new Map();
+let stopsByRouteId = new Map();
 let activePreset = "pugetMix";
 let activeRouteIds = [];
+let activeRouteIdSet = new Set();
 let customRouteIds = new Set();
 let prevStops = new Map();
 let stopsPrimed = false;
@@ -45,7 +49,7 @@ if (hasVisited()) {
 }
 
 function applyAudioSettings() {
-  const s = getSettings();
+  const s = getAudioSettings();
   setVolume(s.volume);
   setReverbWet(s.reverbWet);
 }
@@ -66,6 +70,7 @@ onSettingsChange((key) => {
 
 async function start() {
   transitData = await fetch("/api/transit-data").then((r) => r.json());
+  buildTransitLookups();
 
   initMap($("map-container"));
   buildPresetUI();
@@ -84,6 +89,18 @@ async function start() {
   updateClock();
 
   initModals();
+}
+
+function buildTransitLookups() {
+  routeById = new Map();
+  stopsByRouteId = new Map();
+  for (const route of transitData.routes) {
+    routeById.set(route.route_id, route);
+    stopsByRouteId.set(
+      route.route_id,
+      new Map(route.stops.map((stop) => [stop.stop_id, stop])),
+    );
+  }
 }
 
 function buildPresetUI() {
@@ -143,7 +160,7 @@ function resetView() {
   stopsPrimed = false;
   noteTimestamps = [];
   lastRouteNoteAt.clear();
-  $("recent-list").innerHTML = "";
+  $("recent-list").replaceChildren();
   $("notes-per-min").textContent = "♫ 0/min";
 }
 
@@ -164,8 +181,9 @@ function refreshRoutes() {
     activePreset === "custom"
       ? [...customRouteIds]
       : getPresetRouteIds(activePreset, transitData.routes);
+  activeRouteIdSet = new Set(activeRouteIds);
   stopsPrimed = false;
-  renderRoutes(transitData.routes, activeRouteIds);
+  renderRoutes(transitData.routes, activeRouteIdSet);
 }
 
 let deferredArrivals = [];
@@ -232,7 +250,7 @@ function playQueuedNote() {
 }
 
 function scheduleArrivals(arrivals) {
-  const s = getSettings();
+  const s = getTimingSettings();
   const { maxDeferredArrivals, maxDeferredFlush } = getEventSettings();
   const immThreshold = s.immediacy;
   const bankedFraction = s.burstTendency;
@@ -266,14 +284,14 @@ function scheduleArrivals(arrivals) {
 async function poll() {
   try {
     const vehicles = await fetch("/api/vehicles").then((r) => r.json());
-    const activeVehicles = vehicles.filter((v) => activeRouteIds.includes(v.route_id));
+    const activeVehicles = vehicles.filter((v) => activeRouteIdSet.has(v.route_id));
 
     if (!stopsPrimed) {
       for (const v of activeVehicles) {
         prevStops.set(v.vehicle_id, v.current_status === "STOPPED_AT" ? v.stop_id : null);
       }
       stopsPrimed = true;
-      updateVehicles(vehicles, activeRouteIds);
+      updateVehicles(vehicles, activeRouteIdSet);
       $("bus-count").textContent = `${activeVehicles.length} buses`;
       return;
     }
@@ -289,7 +307,7 @@ async function poll() {
 
     scheduleArrivals(arrivals);
 
-    updateVehicles(vehicles, activeRouteIds);
+    updateVehicles(vehicles, activeRouteIdSet);
     $("bus-count").textContent = `${activeVehicles.length} buses`;
   } catch (e) {
     console.error("poll:", e);
@@ -297,9 +315,9 @@ async function poll() {
 }
 
 function onArrival(vehicle) {
-  const route = transitData.routes.find((r) => r.route_id === vehicle.route_id);
+  const route = routeById.get(vehicle.route_id);
   if (!route) return;
-  const stop = route.stops.find((s) => s.stop_id === vehicle.stop_id);
+  const stop = stopsByRouteId.get(vehicle.route_id)?.get(vehicle.stop_id);
   if (!stop) return;
 
   flashStop(vehicle.stop_id, `#${route.color || "666"}`);
@@ -309,7 +327,10 @@ function onArrival(vehicle) {
 function addRecent(route, stop) {
   const ul = $("recent-list");
   const li = document.createElement("li");
-  li.innerHTML = `<span style="color:#${route.color || "666"}">&#9679;</span> ${route.short_name} &rarr; ${stop.name}`;
+  const dot = document.createElement("span");
+  dot.style.color = `#${route.color || "666"}`;
+  dot.textContent = "\u25CF";
+  li.append(dot, document.createTextNode(` ${route.short_name} \u2192 ${stop.name}`));
   ul.prepend(li);
   while (ul.children.length > 8) ul.lastChild.remove();
 }
@@ -405,16 +426,18 @@ function openSettingsModal() {
 
 function populateSettingsModal() {
   const s = getSettings();
+  const audioSettings = getAudioSettings();
+  const timingSettings = getTimingSettings();
   const eventSettings = getEventSettings();
   const profileSettings = getProfileSettings();
-  $("setting-volume").value = s.volume;
-  $("volume-value").textContent = `${s.volume} dB`;
-  $("setting-reverb").value = Math.round(s.reverbWet * 100);
-  $("reverbWet-value").textContent = `${Math.round(s.reverbWet * 100)}%`;
-  $("setting-immediacy").value = Math.round(s.immediacy * 100);
-  $("immediacy-value").textContent = `${Math.round(s.immediacy * 100)}%`;
-  $("setting-burst").value = Math.round(s.burstTendency * 100);
-  $("burst-value").textContent = `${Math.round(s.burstTendency * 100)}%`;
+  $("setting-volume").value = audioSettings.volume;
+  $("volume-value").textContent = `${audioSettings.volume} dB`;
+  $("setting-reverb").value = Math.round(audioSettings.reverbWet * 100);
+  $("reverbWet-value").textContent = `${Math.round(audioSettings.reverbWet * 100)}%`;
+  $("setting-immediacy").value = Math.round(timingSettings.immediacy * 100);
+  $("immediacy-value").textContent = `${Math.round(timingSettings.immediacy * 100)}%`;
+  $("setting-burst").value = Math.round(timingSettings.burstTendency * 100);
+  $("burst-value").textContent = `${Math.round(timingSettings.burstTendency * 100)}%`;
   $("setting-noteRate").value = eventSettings.noteRate;
   $("noteRate-value").textContent = `${eventSettings.noteRate}/s`;
   $("setting-routeCooldownMs").value = eventSettings.routeCooldownMs;

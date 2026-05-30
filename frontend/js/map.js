@@ -5,6 +5,7 @@ let routeGroup;
 let stopGroup;
 let vehicleGroup;
 let stopLookup = new Map();
+let vehicleMarkers = new Map();
 let activeFlashes = [];
 
 export function initMap(container) {
@@ -32,13 +33,14 @@ export function clearMap() {
   stopGroup.clearLayers();
   vehicleGroup.clearLayers();
   stopLookup.clear();
+  vehicleMarkers.clear();
   clearFlashes();
 }
 
 export function renderRoutes(routes, activeRouteIds) {
   clearMap();
 
-  const active = routes.filter((r) => activeRouteIds.includes(r.route_id));
+  const active = routes.filter((r) => hasRoute(activeRouteIds, r.route_id));
 
   for (const route of active) {
     const color = `#${route.color || "666666"}`;
@@ -77,16 +79,36 @@ export function renderRoutes(routes, activeRouteIds) {
 }
 
 export function updateVehicles(vehicles, activeRouteIds) {
-  vehicleGroup.clearLayers();
+  const seen = new Set();
 
-  const active = vehicles.filter((v) => activeRouteIds.includes(v.route_id));
-  for (const v of active) {
-    L.circleMarker([v.latitude, v.longitude], {
-      radius: 5,
-      color: "transparent",
-      fillColor: "#fff",
-      fillOpacity: 0.85,
-    }).addTo(vehicleGroup);
+  for (const v of vehicles) {
+    if (!hasRoute(activeRouteIds, v.route_id)) continue;
+    const lat = Number(v.latitude);
+    const lon = Number(v.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+
+    seen.add(v.vehicle_id);
+    const latLng = [lat, lon];
+    const marker = vehicleMarkers.get(v.vehicle_id);
+    if (marker) {
+      marker.setLatLng(latLng);
+    } else {
+      vehicleMarkers.set(
+        v.vehicle_id,
+        L.circleMarker(latLng, {
+          radius: 5,
+          color: "transparent",
+          fillColor: "#fff",
+          fillOpacity: 0.85,
+        }).addTo(vehicleGroup),
+      );
+    }
+  }
+
+  for (const [vehicleId, marker] of vehicleMarkers) {
+    if (seen.has(vehicleId)) continue;
+    vehicleGroup.removeLayer(marker);
+    vehicleMarkers.delete(vehicleId);
   }
 }
 
@@ -124,4 +146,10 @@ function clearFlashes() {
     map.removeLayer(f.marker);
   }
   activeFlashes = [];
+}
+
+function hasRoute(activeRouteIds, routeId) {
+  return activeRouteIds instanceof Set
+    ? activeRouteIds.has(routeId)
+    : activeRouteIds.includes(routeId);
 }

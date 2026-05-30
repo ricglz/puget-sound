@@ -21,6 +21,22 @@ const DEFAULTS = {
 };
 
 const PREFIX = "ps:";
+const DURATION_KEYS = ["dur:0.15", "dur:0.3", "dur:0.6", "dur:1.2", "dur:2.5", "dur:4.0"];
+const NUMERIC_RANGES = {
+  volume: [-20, 0],
+  reverbWet: [0, 1],
+  immediacy: [0, 1],
+  burstTendency: [0, 1],
+  noteRate: [2, 16],
+  routeCooldownMs: [0, 1500],
+  maxNoteQueue: [10, 200],
+  maxDeferredArrivals: [10, 200],
+  maxDeferredFlush: [5, 80],
+  profileIntensity: [0, 1.5],
+  profileBrightness: [0.5, 1.5],
+  stereoWidth: [0, 1.5],
+};
+
 let settings = {};
 let listeners = [];
 
@@ -42,17 +58,45 @@ function remove(key) {
   localStorage.removeItem(PREFIX + key);
 }
 
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeNumber(value, fallback, min, max) {
+  const parsed = Number(value);
+  const safeValue = Number.isFinite(parsed) ? parsed : fallback;
+  return clamp(safeValue, min, max);
+}
+
+function normalizeDurationWeight(value, fallback) {
+  const parsed = Number(value);
+  const safeValue = Number.isFinite(parsed) ? parsed : fallback;
+  return clamp(safeValue, 0, 100);
+}
+
+function normalizeSetting(key, value) {
+  if (DURATION_KEYS.includes(key)) {
+    return normalizeDurationWeight(value, 0);
+  }
+  const range = NUMERIC_RANGES[key];
+  if (range) {
+    return normalizeNumber(value, DEFAULTS[key], range[0], range[1]);
+  }
+  return value;
+}
+
 function numberSetting(key, min, max) {
-  const fallback = DEFAULTS[key];
-  const value = Number(settings[key] ?? fallback);
-  const safeValue = Number.isFinite(value) ? value : fallback;
-  return Math.min(max, Math.max(min, safeValue));
+  return normalizeNumber(settings[key], DEFAULTS[key], min, max);
+}
+
+function durationWeightSetting(key) {
+  return normalizeDurationWeight(settings[key], 0);
 }
 
 export function loadSettings() {
   settings = {};
   for (const [key, def] of Object.entries(DEFAULTS)) {
-    settings[key] = read(key, def);
+    settings[key] = normalizeSetting(key, read(key, def));
   }
 }
 
@@ -61,9 +105,10 @@ export function getSettings() {
 }
 
 export function updateSetting(key, value) {
-  settings[key] = value;
-  write(key, value);
-  listeners.forEach((fn) => fn(key, value, settings));
+  const normalized = normalizeSetting(key, value);
+  settings[key] = normalized;
+  write(key, normalized);
+  listeners.forEach((fn) => fn(key, normalized, settings));
 }
 
 export function onSettingsChange(fn) {
@@ -108,13 +153,27 @@ export function setCustomRoutes(ids) {
 
 export function getDurationWeights() {
   return [
-    [0.15, settings["dur:0.15"]],
-    [0.3, settings["dur:0.3"]],
-    [0.6, settings["dur:0.6"]],
-    [1.2, settings["dur:1.2"]],
-    [2.5, settings["dur:2.5"]],
-    [4.0, settings["dur:4.0"]],
+    [0.15, durationWeightSetting("dur:0.15")],
+    [0.3, durationWeightSetting("dur:0.3")],
+    [0.6, durationWeightSetting("dur:0.6")],
+    [1.2, durationWeightSetting("dur:1.2")],
+    [2.5, durationWeightSetting("dur:2.5")],
+    [4.0, durationWeightSetting("dur:4.0")],
   ];
+}
+
+export function getAudioSettings() {
+  return {
+    volume: numberSetting("volume", -20, 0),
+    reverbWet: numberSetting("reverbWet", 0, 1),
+  };
+}
+
+export function getTimingSettings() {
+  return {
+    immediacy: numberSetting("immediacy", 0, 1),
+    burstTendency: numberSetting("burstTendency", 0, 1),
+  };
 }
 
 export function getEventSettings() {
